@@ -1,0 +1,126 @@
+cout << "lecture 3" << endl;
+
+int nx = 5;
+int ny = 10;
+
+real x0  = -2.0;
+real x1  = 3.0;
+real y0  = -1.0;
+real y1  = 4.0;
+
+mesh Th1 = square(nx, ny,
+                 [x0+(x1-x0)*x, y0+(y1-y0)*y]
+                 );
+
+plot(Th1);
+
+/* Compound mesh */
+
+real xMax =  4.0;
+real xMin = -4.0;
+
+real xMinLeft = -2.0;
+real xMinRight = 2.0;
+
+real yMin = 0.0;
+real yMax = 3.0;
+real yMid = 1.0;
+
+int labelR = 1;
+int labelL = 2;
+int labelT = 3;
+int labelB = 4;
+
+int labelInner = 5;
+
+int n = 50;
+
+border GammaR( t = 0.0, 1.0 ){
+    x = xMax;
+    y = yMin + (yMax - yMin)*t;
+    label = labelR;
+}
+
+border GammaL( t = 0.0, 1.0 ){
+    x = xMin;
+    y = yMax + (yMin - yMax)*t;
+    label = labelL;
+}
+
+border GammaT( t = 0.0, 1.0 ){
+    x = xMax + (xMin - xMax)*t;
+    y = yMax;
+      label = labelT;
+}
+
+border GammaBl( t = 0.0, 1.0 ){
+    x = xMin + (xMinLeft - xMin)*t;
+    y = yMin;
+      label = labelB;
+}
+
+real betta = 0.00001;
+
+border GammaBR( t = 0.0, 1.0 ){
+    x = xMinRight + (xMax - xMinRight)*( exp(betta*t) - 1.0 ) / ( exp(betta) - 1.0 ) ;
+    y = yMin;
+      label = labelB;
+}
+
+border GammaBM( t = 0.0, 1.0 ){
+    x = xMinLeft + (xMinRight - xMinLeft)*t;
+    y = yMin;
+      label = labelB;
+}
+
+plot( GammaR(n) + GammaL(n) 
+    + GammaT(n) + GammaBl(n) 
+    + GammaBR(n) + GammaBM(6*n), dim = 2
+);
+
+mesh Th2 = buildmesh(
+    GammaR(n) + GammaL(n) 
+    + GammaT(n) + GammaBl(n) 
+    + GammaBR(n) + GammaBM(6*n),
+    nbvx = 50000, /*max caunt of points*/
+    fixedborder = true
+);
+
+plot(Th2);
+
+
+/* For loop compound mesh */
+
+real[int] xRect = [0, 1, 1, 0];
+real[int] yRect = [0, 0, 1, 1];
+int[int]  nRect = [4, 4, 5, 7]*4;
+int lableRect = 0;
+
+real[int] rCircle = [0.1, 0.05, 0.05, 0.1];
+real[int] xCircle = [0.2, 0.8, 0.2, 0.8];
+real[int] yCircle = [0.2, 0.8, 0.8, 0.2];
+int[int] nCircle = [-10, -11, -12, 13]*5;
+real[int] labelCircle = [1, 2, 3, 4];
+
+border GammaCircle(t = 0.0, 2*pi; i ){
+    x = xCircle[i] + rCircle[i]*cos(t);
+    y = yCircle[i] + rCircle[i]*sin(t);
+    label = labelCircle[i];
+}
+
+/* Rectangle boundary definition */
+
+border GammaRectangle( t = 0.0, 1.0; i ){
+
+    int iNext = (i+1)%nRect.n;
+    real t1 = (1-t);
+    x = xRect[i]*t1 + xRect[iNext]*t; 
+    y = yRect[i]*t1 + yRect[iNext]*t;
+    label = lableRect;
+}
+
+plot(GammaRectangle(nRect), dim = 2 );
+mesh Th4 = buildmesh(
+   GammaRectangle(nRect) + GammaCircle(nCircle)
+);
+plot(Th4);
