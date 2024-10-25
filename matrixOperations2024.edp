@@ -1,0 +1,90 @@
+/* Dense matrix */
+real[int, int] A(2, 2);
+
+A = [
+    [1, 3],
+    [6, 0]
+];
+
+cout << A;
+
+matrix spA= A; // Create sparse matrix
+matrix spAT = spA'; //Transposition\
+matrix spASquared =spA*spA;
+matrix spEmpty;
+
+matrix spASum = 0.5*spA + spAT + 0.3*spEmpty;
+
+cout << "spA: " << spA << endl;
+
+cout << spA(0,0) << endl;
+
+set(spA, solver=sparsesolver); //solver = "SPARSESOLVERSYM", sym=1); for symmetrical sparse matrix
+real[int] b = [3, 5];
+real[int] xx = spA^-1*b;
+cout << "x = " << xx << endl;
+cout << "spA: " << spA << endl;
+
+/* COO format */
+real[int] C; // Non-zero elements
+int[int] I; // Row indices
+int[int] J; // Column indices
+
+[I, J, C] = spA;
+
+cout << "I: " << endl << I << endl;
+cout << "J: " << endl << J << endl;
+cout << "C: " << endl << C << endl;
+
+// I.n
+
+cout << "nnz  = " << spA.nnz << endl;
+
+C.resize(3);
+I.resize(3);
+J.resize(3);
+
+
+
+matrix spAOpt = [I, J, C];
+
+cout << "spAOpt: " << spAOpt << endl;
+
+spAOpt.resize(3,4);
+
+cout << "spAOpt: " << spAOpt << endl;
+
+//Matrxi info
+cout << "spAOpt.n = " << spAOpt.n << endl;
+cout << "spAOpt.m = " << spAOpt.m << endl;
+
+spAOpt(2,3) = 45;
+
+cout << "spAOpt: " << spAOpt << endl;
+
+// get diag
+
+real[int] diagA = spA.diag;
+
+diagA[1] = 9;
+matrix spDiagA = [diagA];
+cout << "spDiagA: " << endl << spDiagA << endl;
+
+matrix spIdentity = eye(5);
+
+cout << "spA.trace = "<< spA.trace << endl;
+
+matrix blockM = [
+    [spA, spASquared'],
+    [spASquared, spDiagA]
+];
+
+cout << "blockM: " << endl << blockM << endl;
+
+load "lapack"
+
+real[int, int] Ainv = A^-1;
+
+cout << "Ainv: " << Ainv << endl;
+
+spA.clear;

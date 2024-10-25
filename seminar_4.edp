@@ -1,0 +1,67 @@
+/*meshopertions*/
+int labelR=14;
+
+border GammaCircle ( t=0.0,2*pi){
+    x=cos(t);
+    y=sin(t);
+    label = labelR;
+}
+
+
+int n=50;
+mesh Th1 = buildmesh ( GammaCircle(n));
+plot(Th1);
+
+string meshFilenameMsh = "Th1.msh";
+string meshFilenameGeo = "Th1.geo";
+
+
+savemesh(Th1,meshFilenameGeo);
+
+mesh Th2= readmesh(meshFilenameMsh);
+plot (Th2);
+
+/*
+load "gmsh"
+string meshFilenameGMSH = "Th3.msh2";
+mesh Th3 = gmashload(Th3);
+
+/*move mash*/
+
+func uu = sin(y*pi)/10;
+func vv = cos(x*pi)/10;
+
+real coeff = 3;
+mesh Th4 = movemesh(Th2,[x+coeff*uu,y+coeff*vv]);
+
+real minArea = checkmovemesh(Th2, [x+coeff*uu,y+coeff*vv]);
+cout<< "min  Area = "<< minArea << endl;
+
+plot(Th4, ps="Th41.eps");
+
+/* Mesh adaptation */
+
+fespace Vh(Th2,P1);
+
+Vh u,v,f;
+real error = 0.1;
+
+for( int i=0; i<15; i++){
+    f = 1.0 / sqrt(x^2+y^2);
+
+    Th2 = adaptmesh(Th2,f,
+            err = error,
+            hmin = 0.01,
+            hmax = 0.1,
+            iso = true,
+            nbvx = 60000/*esli setka rvanaya tupo uvelich*/
+        );
+    error=error/2;
+
+    u=u;/*obnovlenie setki*/
+
+    cout << "u[].n = "<< u[].n<< endl;
+
+    plot(Th2, f, fill=0, dim=3, wait=1, value=1, nbiso=50);
+
+};

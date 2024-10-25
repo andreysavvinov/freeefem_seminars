@@ -1,0 +1,96 @@
+
+/* Domain geometry */
+real ROut = 100.0; /*[m], Radius of outer circle*/
+real RIn = 0.1; /*[m] Radius of inner circle*/
+
+/* Boundary conditions*/
+real pOut = 23e6; /*[Pa], reservoir pressure*/
+real pIn = 12e6; /*[Pa], ellbore pressure
+
+
+func uExactFunc = 0.5*C1*log(x*x + y*y) + C2;
+func g = C1 / sqrt(x^2 + y^2);
+
+/* Mesh definition */
+int NN = 50;
+int NOut = NN;
+int NIn =  NN*2;
+
+int labelIn = 1;  /* label for inner circle*/
+int labelOut = 2; /* label for outer circle*/
+
+/* Reservoir parameters */
+
+real Ct = 1e-10; /* [1/Pa], Compressibility*/
+real kr = 1e-14; /* [m^2], permeability*/
+real mu = 5e-3; /* [Pa*s], viscosity*/
+real phi0 = 0.2; /* [], porosity*/
+
+real dt = 20; /*[s], timestep*/
+real tMax = 20000; /*[s],  Maximum time*/
+
+/* inner circle border definition*/
+border GammaIn(t = 2*pi , 0.0){
+    x = RIn *cos(t);
+    y = RIn*sin(t);
+    label = labelIn;
+}
+
+/* Outer circle border definition*/
+border GammaOut(t = 0.0, 2*pi){
+    x = ROut *cos(t);
+    y = ROut*sin(t);
+    label = labelOut;
+}
+
+plot(GammaIn(NIn) +  GammaOut(NOut), dim=2);
+
+mesh Th = buildmesh(GammaIn(NIn) +  GammaOut(NOut), nbvx=100000);
+plot (Th);
+
+/*Finite element space definition*/
+
+fespace Vh(Th,P1);
+
+Vh p, phi;
+
+Vh pOld = pOut; //initial data
+
+problem FiltrationProblem(p, phi) = 
+    int2d(Th)(
+        phi0*Ct*phi*p
+        + dt*kr/mu*(
+            dx(p)*dx(phi) + dy(p)*dy(phi)
+        )
+    )
+    -int2d(Th)(
+        phi0*Ct*pOld*phi
+    )
+    +on(labelIn, p=pIn)
+    +on(labelOut, p=pOut);
+
+real t=0;
+
+while (t<tMax){
+    FiltrationProblem;
+    string plotTitle = "reservoir filtration. t = " + t + "s";
+    plot(Th, p, fill=true, dim=3, value=1, nbiso=100, cmm=plotTitle);
+
+    /* Production rate per unit pay height*/
+
+    real q = int1d(Th, GammaIn)(
+        -kr/mu*(dx(p)*N.x + dy(p)*N.y)
+    );// [m^2/s]
+
+    real qStationary = 2*pi*kr/mu*(pOut - pIn)/log(ROut/RIn); // [m^2/s]
+
+    cout << "Production q = " << q << ";, Stat. prod. = " << qStationary << endl;
+    real hpay = 8; //[m], Pay zone
+    real QperDay = q*hpay*24*3600;
+    cout << "total rate per day = " << QperDay << " m3/day " << endl;
+
+    pOld = p;
+    t = t + dt;
+
+}
+
