@@ -1,0 +1,62 @@
+
+/* Domain geometry */
+real Rout = 2;
+
+/* initial solution parameters */
+real x0 = 0.25;
+real y0 =0.5;
+real r0 = 0.1;
+real beta = 10.0;
+
+func u0 = 0.5*(
+    1.0
+    + tanh(
+        -beta *((x-x0)^2 + (y-y0)^2 - r0^2)
+    )
+);
+
+/*velocityu field*/
+real omega1 = 2.0*pi;
+func v1 = omega1 * y;
+func v2 = -omega1 * x;
+
+/* Mesh definition */
+int NOut = 120;
+int LabelOut = 2;
+
+border GammaOut(t = 0, 2*pi){
+    x= Rout*cos(t);
+    y= Rout*sin(t);
+    label = LabelOut;
+}
+
+mesh Th = buildmesh( GammaOut(NOut));
+
+plot(Th);
+
+fespace Vh(Th,P2);
+Vh u, v;
+
+Vh uOld = u0;
+
+real tMax = 1.0;
+real dt = 0.01;
+real t = 0.0;
+
+real volume = int2d(Th)(uOld);
+string plotTitle = "t = " + t;
+plot(Th, u, cmm =plotTitle, dim =3, fill =1, wait=0, nbiso=50 );
+
+problem Convection(u, v) =
+    int2d(Th)(u*v)
+    -int2d(Th)(convect([v1 ,v2], -dt, uOld)*v);
+
+while(t < tMax){
+    Convection;
+    //u = convect([v1 ,v2], -dt, uOld);
+    uOld = u;
+    volume = int2d(Th)(u);
+    t = t+dt;
+    string plotTitle = "t = " + t+ "; vol = " + volume;
+    plot(Th, u, cmm =plotTitle, dim =3, fill =1, wait=0, nbiso=50 );
+}
